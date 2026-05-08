@@ -12,3 +12,8 @@ Traceback (most recent call last):
 psycopg2.errors.UndefinedTable: relation "customers" does not exist
 LINE 2:         INSERT INTO customers
                             ^
+
+INSERT INTO customers
+(email, date_of_birth, first_name, last_name)
+VALUES
+('test@gmail.com', '2000-01-01', 'Test', 'User');
