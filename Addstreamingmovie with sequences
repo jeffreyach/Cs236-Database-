@@ -1,0 +1,109 @@
+# This program adds customers to the movie streaming database
+
+import getpass
+import re
+from psycopg2 import connect
+
+
+def connect_db():
+    dbuser = getpass.getuser()
+    dbpass = getpass.getpass("Password: ")
+
+    connStr = "host=csdept dbname=cs236 user=%s password=%s" % (dbuser, dbpass)
+    return connect(connStr)
+
+
+def safe_input(prompt):
+    val = input(prompt).strip()
+
+    if val.lower() == "q":
+        return None
+
+    return val
+
+
+def valid_email(email):
+    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    return re.match(pattern, email) is not None
+
+
+def valid_dob(dob):
+    pattern = r"^\d{4}-\d{2}-\d{2}$"
+    return re.match(pattern, dob) is not None
+
+
+def add_customer(cur):
+    print("\n=== Add Customer ===")
+    print("Type 'q' anytime to cancel.\n")
+
+    while True:
+        first_name = safe_input("First Name: ")
+        if first_name is None:
+            return
+
+        if first_name != "":
+            break
+
+        print("First name cannot be empty.")
+
+    while True:
+        last_name = safe_input("Last Name: ")
+        if last_name is None:
+            return
+
+        if last_name != "":
+            break
+
+        print("Last name cannot be empty.")
+
+    while True:
+        email = safe_input("Email: ")
+        if email is None:
+            return
+
+        if valid_email(email):
+            break
+
+        print("Enter a valid email address.")
+
+    while True:
+        date_of_birth = safe_input("Date of Birth (YYYY-MM-DD): ")
+        if date_of_birth is None:
+            return
+
+        if valid_dob(date_of_birth):
+            break
+
+        print("Enter date in YYYY-MM-DD format.")
+
+    # RETURNING gets the auto-generated customer_id
+    cur.execute(
+        """
+        INSERT INTO customer
+        (email, date_of_birth, first_name, last_name)
+        VALUES (%s, %s, %s, %s)
+        RETURNING customer_id
+        """,
+        (email, date_of_birth, first_name, last_name)
+    )
+
+    customer_id = cur.fetchone()[0]
+
+    print("\nCustomer added successfully.")
+    print("Generated Customer ID:", customer_id)
+
+
+def main():
+    conn = connect_db()
+    cur = conn.cursor()
+
+    add_customer(cur)
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+
+if __name__ == "__main__":
+    main()
