@@ -1,18 +1,23 @@
 # This program adds customers to the movie streaming database
 
+# Imports
 import getpass
 import re
 from psycopg2 import connect
 
 
+# Connect to database
 def connect_db():
     dbuser = getpass.getuser()
     dbpass = getpass.getpass("Password: ")
 
-    connStr = "host=csdept dbname=cs236 user=%s password=%s" % (dbuser, dbpass)
+    connStr = "host=csdept dbname=cs236 user=%s password=%s" % \
+              (dbuser, dbpass)
+
     return connect(connStr)
 
 
+# Safe input function
 def safe_input(prompt):
     val = input(prompt).strip()
 
@@ -22,22 +27,97 @@ def safe_input(prompt):
     return val
 
 
+# Positive integer validation
+def get_positive_int(prompt):
+    while True:
+        val = safe_input(prompt)
+
+        if val is None:
+            return None
+
+        try:
+            val = int(val)
+
+            if val > 0:
+                return val
+
+        except:
+            pass
+
+        print("Enter a positive integer.")
+
+
+# Email validation
 def valid_email(email):
     pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+
     return re.match(pattern, email) is not None
 
 
+# Date validation
 def valid_dob(dob):
     pattern = r"^\d{4}-\d{2}-\d{2}$"
+
     return re.match(pattern, dob) is not None
 
 
+# Display subscriptions and choose one
+def choose_subscription(cur):
+
+    print("\n=== Available Subscriptions ===")
+
+    cur.execute(
+        """
+        SELECT subscription_id, price, duration
+        FROM subscriptions
+        ORDER BY subscription_id
+        """
+    )
+
+    rows = cur.fetchall()
+
+    for row in rows:
+        print(
+            "ID:", row[0],
+            "| Price: $", row[1],
+            "| Duration:", row[2], "days"
+        )
+
+    while True:
+
+        subscription_id = get_positive_int(
+            "\nChoose Subscription ID: "
+        )
+
+        if subscription_id is None:
+            return None
+
+        cur.execute(
+            """
+            SELECT subscription_id
+            FROM subscriptions
+            WHERE subscription_id = %s
+            """,
+            (subscription_id,)
+        )
+
+        if cur.fetchone() is not None:
+            return subscription_id
+
+        print("That subscription ID does not exist.")
+
+
+# Add customer
 def add_customer(cur):
+
     print("\n=== Add Customer ===")
     print("Type 'q' anytime to cancel.\n")
 
+    # First Name
     while True:
+
         first_name = safe_input("First Name: ")
+
         if first_name is None:
             return
 
@@ -46,8 +126,11 @@ def add_customer(cur):
 
         print("First name cannot be empty.")
 
+    # Last Name
     while True:
+
         last_name = safe_input("Last Name: ")
+
         if last_name is None:
             return
 
@@ -56,8 +139,11 @@ def add_customer(cur):
 
         print("Last name cannot be empty.")
 
+    # Email
     while True:
+
         email = safe_input("Email: ")
+
         if email is None:
             return
 
@@ -66,8 +152,13 @@ def add_customer(cur):
 
         print("Enter a valid email address.")
 
+    # Date of birth
     while True:
-        date_of_birth = safe_input("Date of Birth (YYYY-MM-DD): ")
+
+        date_of_birth = safe_input(
+            "Date of Birth (YYYY-MM-DD): "
+        )
+
         if date_of_birth is None:
             return
 
@@ -76,15 +167,34 @@ def add_customer(cur):
 
         print("Enter date in YYYY-MM-DD format.")
 
-    # RETURNING gets the auto-generated customer_id
+    # Choose subscription
+    subscription_id = choose_subscription(cur)
+
+    if subscription_id is None:
+        return
+
+    # Insert customer
     cur.execute(
         """
-        INSERT INTO customer
-        (email, date_of_birth, first_name, last_name)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO customers
+        (email,
+         date_of_birth,
+         first_name,
+         last_name,
+         subscription_id)
+
+        VALUES (%s, %s, %s, %s, %s)
+
         RETURNING customer_id
         """,
-        (email, date_of_birth, first_name, last_name)
+
+        (
+            email,
+            date_of_birth,
+            first_name,
+            last_name,
+            subscription_id
+        )
     )
 
     customer_id = cur.fetchone()[0]
@@ -93,8 +203,11 @@ def add_customer(cur):
     print("Generated Customer ID:", customer_id)
 
 
+# Main function
 def main():
+
     conn = connect_db()
+
     cur = conn.cursor()
 
     add_customer(cur)
@@ -102,8 +215,10 @@ def main():
     conn.commit()
 
     cur.close()
+
     conn.close()
 
 
+# Program start
 if __name__ == "__main__":
     main()
