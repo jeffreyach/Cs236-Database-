@@ -1,0 +1,94 @@
+#This program will be used to add to  the movie streaming database w
+
+#imports
+import getpass
+import sys
+from psycopg2 import connect
+#main function
+def main():
+    
+    #gets the username and the password
+    dbuser = getpass.getuser()
+    dbpass = getpass.getpass()
+    #builds the connection
+    connStr = "host=csdept dbname=cs236 user=%s password=%s" % \
+              (dbuser, dbpass)
+    conn = connect(connStr)  
+    #creating cursor object
+    dbcursor = conn.cursor()     
+
+def safe_input(prompt):
+    val = input(prompt)
+    if val.lower() == "q":
+        return None
+    return val
+
+
+def get_positive_int(prompt):
+    while True:
+        val = safe_input(prompt)
+        if val is None:
+            return None
+        try:
+            val = int(val)
+            if val > 0:
+                return val
+        except:
+            pass
+        print("Enter a positive integer.")
+
+
+def get_float(prompt):
+    while True:
+        val = safe_input(prompt)
+        if val is None:
+            return None
+        try:
+            val = float(val)
+            if val >= 0:
+                return val
+        except:
+            pass
+        print("Enter a valid number.")
+        
+def add_customer(cur):
+    print("\n=== Add Customer ===")
+    print("Type 'q' anytime to cancel.\n")
+
+    while True:
+        user_id = get_positive_int("New Customer ID: ")
+        if user_id is None:
+            return
+        cur.execute("SELECT customer_id FROM users WHERE customer_id=%s", (customer_id,))
+        if cur.fetchone() is None:
+            break
+        print("Customer ID exists.")
+
+    while True:
+        name = safe_input("Customer Full Name: ")
+        if name is None:
+            return
+        if len(name.split()) >= 2:
+            break
+        print("Enter first and last name.")
+
+    while True:
+        email = safe_input("Email: ")
+    while True:
+        date_of_birth = safe_input("Date of Birth")
+        if dob is None:
+            return
+        
+
+    cur.execute("INSERT INTO customers VALUES (%s,%s,%s,%s,)",
+                (customer_id, name, email, dob))
+
+
+    print("\nCustomer added successfully.")    
+def main():
+    conn = connect_db()
+    cur = conn.cursor()
+    
+    conn.close()
+if __name__ == "__main__":
+    main()
