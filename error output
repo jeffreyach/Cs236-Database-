@@ -71,3 +71,10 @@ def main():
     conn.commit()
     cur.close()
     conn.close()
+
+Subscription tables found:
+('pg_catalog', 'pg_subscription')
+('pg_catalog', 'pg_subscription_rel')
+('pg_catalog', 'pg_stat_subscription')
+
+
