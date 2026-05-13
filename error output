@@ -25,3 +25,27 @@ INSERT INTO customers
 (email, date_of_birth, first_name, last_name)
 VALUES
 ('test@gmail.com', '2000-01-01', 'Test', 'User');
+
+=== Available Subscriptions ===
+Traceback (most recent call last):
+  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 224, in <module>
+    main()
+    ~~~~^^
+  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 213, in main
+    add_customer(cur)
+    ~~~~~~~~~~~~^^^^^
+  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 171, in add_customer
+    subscription_id = choose_subscription(cur)
+  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 69, in choose_subscription
+    cur.execute(
+    ~~~~~~~~~~~^
+        """
+        ^^^
+    ...<3 lines>...
+        """
+        ^^^
+    )
+    ^
+psycopg2.errors.UndefinedTable: relation "subscriptions" does not exist
+LINE 3:         FROM subscriptions
+                     ^
