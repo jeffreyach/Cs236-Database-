@@ -49,3 +49,25 @@ Traceback (most recent call last):
 psycopg2.errors.UndefinedTable: relation "subscriptions" does not exist
 LINE 3:         FROM subscriptions
                      ^
+def main():
+    conn = connect_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT current_database();")
+    print("Connected to database:", cur.fetchone()[0])
+
+    cur.execute("""
+        SELECT table_schema, table_name
+        FROM information_schema.tables
+        WHERE table_name LIKE '%subscription%';
+    """)
+
+    print("Subscription tables found:")
+    for row in cur.fetchall():
+        print(row)
+
+    add_customer(cur)
+
+    conn.commit()
+    cur.close()
+    conn.close()
