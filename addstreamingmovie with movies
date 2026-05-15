@@ -1,1 +1,262 @@
+# This program adds customers or movies to the movie streaming database
 
+import getpass
+import re
+from psycopg2 import connect
+
+
+def connect_db():
+    dbuser = getpass.getuser()
+    dbpass = getpass.getpass("Password: ")
+
+    connStr = "host=csdept dbname=cs236 user=%s password=%s" % (
+        dbuser,
+        dbpass
+    )
+
+    return connect(connStr)
+
+
+def safe_input(prompt):
+    val = input(prompt).strip()
+
+    if val.lower() == "q":
+        return None
+
+    return val
+
+
+def get_positive_int(prompt):
+    while True:
+        val = safe_input(prompt)
+
+        if val is None:
+            return None
+
+        try:
+            val = int(val)
+            if val > 0:
+                return val
+        except:
+            pass
+
+        print("Enter a positive integer.")
+
+
+def valid_email(email):
+    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    return re.match(pattern, email) is not None
+
+
+def valid_dob(dob):
+    pattern = r"^\d{4}-\d{2}-\d{2}$"
+    return re.match(pattern, dob) is not None
+
+
+def choose_subscription(cur):
+    print("\n=== Available Subscriptions ===")
+
+    cur.execute(
+        """
+        SELECT subscription_id, price, duration
+        FROM group5.subscriptions
+        ORDER BY subscription_id
+        """
+    )
+
+    rows = cur.fetchall()
+
+    for row in rows:
+        print("ID:", row[0], "| Price: $", row[1], "| Duration:", row[2], "days")
+
+    while True:
+        subscription_id = get_positive_int("\nChoose Subscription ID: ")
+
+        if subscription_id is None:
+            return None
+
+        cur.execute(
+            """
+            SELECT subscription_id
+            FROM group5.subscriptions
+            WHERE subscription_id = %s
+            """,
+            (subscription_id,)
+        )
+
+        if cur.fetchone() is not None:
+            return subscription_id
+
+        print("That subscription ID does not exist.")
+
+
+def add_customer(cur):
+    print("\n=== Add Customer ===")
+    print("Type 'q' anytime to cancel.\n")
+
+    while True:
+        first_name = safe_input("First Name: ")
+
+        if first_name is None:
+            return
+
+        if first_name != "":
+            break
+
+        print("First name cannot be empty.")
+
+    while True:
+        last_name = safe_input("Last Name: ")
+
+        if last_name is None:
+            return
+
+        if last_name != "":
+            break
+
+        print("Last name cannot be empty.")
+
+    while True:
+        email = safe_input("Email: ")
+
+        if email is None:
+            return
+
+        if valid_email(email):
+            break
+
+        print("Enter a valid email address.")
+
+    while True:
+        date_of_birth = safe_input("Date of Birth (YYYY-MM-DD): ")
+
+        if date_of_birth is None:
+            return
+
+        if valid_dob(date_of_birth):
+            break
+
+        print("Enter date in YYYY-MM-DD format.")
+
+    subscription_id = choose_subscription(cur)
+
+    if subscription_id is None:
+        return
+
+    cur.execute(
+        """
+        INSERT INTO group5.customers
+        (email, date_of_birth, first_name, last_name, subscription_id)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING customer_id
+        """,
+        (
+            email,
+            date_of_birth,
+            first_name,
+            last_name,
+            subscription_id
+        )
+    )
+
+    customer_id = cur.fetchone()[0]
+
+    print("\nCustomer added successfully.")
+    print("Generated Customer ID:", customer_id)
+
+
+def add_movie(cur):
+    print("\n=== Add Movie ===")
+    print("Type 'q' anytime to cancel.\n")
+
+    while True:
+        title = safe_input("Movie Title: ")
+
+        if title is None:
+            return
+
+        if title != "":
+            break
+
+        print("Movie title cannot be empty.")
+
+    while True:
+        genre = safe_input("Genre: ")
+
+        if genre is None:
+            return
+
+        if genre != "":
+            break
+
+        print("Genre cannot be empty.")
+
+    while True:
+        release_year = get_positive_int("Release Year: ")
+
+        if release_year is None:
+            return
+
+        if release_year >= 1888:
+            break
+
+        print("Enter a valid movie release year.")
+
+    cur.execute(
+        """
+        INSERT INTO group5.movies
+        (title, genre, release_year)
+        VALUES (%s, %s, %s)
+        RETURNING movie_id
+        """,
+        (
+            title,
+            genre,
+            release_year
+        )
+    )
+
+    movie_id = cur.fetchone()[0]
+
+    print("\nMovie added successfully.")
+    print("Generated Movie ID:", movie_id)
+
+
+def menu():
+    print("\n=== Movie Streaming Database ===")
+    print("1. Add Customer")
+    print("2. Add Movie")
+    print("3. Quit")
+
+
+def main():
+    conn = connect_db()
+    cur = conn.cursor()
+
+    while True:
+        menu()
+
+        choice = safe_input("\nEnter your choice: ")
+
+        if choice is None or choice == "3":
+            break
+
+        if choice == "1":
+            add_customer(cur)
+            conn.commit()
+
+        elif choice == "2":
+            add_movie(cur)
+            conn.commit()
+
+        else:
+            print("Invalid choice. Enter 1, 2, or 3.")
+
+    cur.close()
+    conn.close()
+
+    print("\nProgram ended.")
+
+
+if __name__ == "__main__":
+    main()
