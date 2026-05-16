@@ -1,7 +1,6 @@
 # This program adds customers or movies to the movie streaming database
 
 import getpass
-import re
 from psycopg2 import connect
 
 
@@ -44,6 +43,7 @@ def get_positive_int(prompt):
             return None
 
         try:
+
             val = int(val)
 
             if val > 0:
@@ -58,121 +58,16 @@ def get_positive_int(prompt):
     return number
 
 
-# Email validation
+# Simple email validation
 def valid_email(email):
 
-    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
-
-    return re.match(pattern, email) is not None
+    return "@" in email and "." in email
 
 
-# Date validation
+# Simple date validation
 def valid_dob(dob):
 
-    pattern = r"^\d{4}-\d{2}-\d{2}$"
-
-    return re.match(pattern, dob) is not None
-
-
-# Choose subscription
-def choose_subscription(cur):
-
-    print("\n=== Available Subscriptions ===")
-
-    cur.execute(
-        """
-        SELECT subscription_id, price, duration
-        FROM group5.subscriptions
-        ORDER BY subscription_id
-        """
-    )
-
-    rows = cur.fetchall()
-
-    for row in rows:
-
-        print(
-            "ID:", row[0],
-            "| Price: $", row[1],
-            "| Duration:", row[2], "days"
-        )
-
-    subscription_id = None
-
-    while subscription_id is None:
-
-        selected_id = get_positive_int(
-            "\nChoose Subscription ID: "
-        )
-
-        if selected_id is None:
-            return None
-
-        cur.execute(
-            """
-            SELECT subscription_id
-            FROM group5.subscriptions
-            WHERE subscription_id = %s
-            """,
-            (selected_id,)
-        )
-
-        if cur.fetchone() is not None:
-            subscription_id = selected_id
-        else:
-            print("That subscription ID does not exist.")
-
-    return subscription_id
-
-
-# Choose studio
-def choose_studio(cur):
-
-    print("\n=== Available Studios ===")
-
-    cur.execute(
-        """
-        SELECT studio_id, studio_name
-        FROM group5.studio
-        ORDER BY studio_id
-        """
-    )
-
-    rows = cur.fetchall()
-
-    for row in rows:
-
-        print(
-            "ID:", row[0],
-            "| Studio:", row[1]
-        )
-
-    studio_id = None
-
-    while studio_id is None:
-
-        selected_id = get_positive_int(
-            "\nChoose Studio ID: "
-        )
-
-        if selected_id is None:
-            return None
-
-        cur.execute(
-            """
-            SELECT studio_id
-            FROM group5.studio
-            WHERE studio_id = %s
-            """,
-            (selected_id,)
-        )
-
-        if cur.fetchone() is not None:
-            studio_id = selected_id
-        else:
-            print("That studio ID does not exist.")
-
-    return studio_id
+    return len(dob) == 10
 
 
 # Add customer
@@ -205,9 +100,8 @@ def add_customer(cur):
         if last_name == "":
             print("Last name cannot be empty.")
 
-    email = ""
-
     valid = False
+    email = ""
 
     while not valid:
 
@@ -221,9 +115,8 @@ def add_customer(cur):
         else:
             print("Enter a valid email address.")
 
-    date_of_birth = ""
-
     valid = False
+    date_of_birth = ""
 
     while not valid:
 
@@ -239,10 +132,50 @@ def add_customer(cur):
         else:
             print("Enter date in YYYY-MM-DD format.")
 
-    subscription_id = choose_subscription(cur)
+    print("\n=== Available Subscriptions ===")
 
-    if subscription_id is None:
-        return
+    cur.execute(
+        """
+        SELECT subscription_id, price, duration
+        FROM group5.subscriptions
+        ORDER BY subscription_id
+        """
+    )
+
+    rows = cur.fetchall()
+
+    for row in rows:
+
+        print(
+            "ID:", row[0],
+            "| Price: $", row[1],
+            "| Duration:", row[2], "days"
+        )
+
+    subscription_id = None
+
+    while subscription_id is None:
+
+        selected_id = get_positive_int(
+            "\nChoose Subscription ID: "
+        )
+
+        if selected_id is None:
+            return
+
+        cur.execute(
+            """
+            SELECT subscription_id
+            FROM group5.subscriptions
+            WHERE subscription_id = %s
+            """,
+            (selected_id,)
+        )
+
+        if cur.fetchone() is not None:
+            subscription_id = selected_id
+        else:
+            print("That subscription ID does not exist.")
 
     cur.execute(
         """
@@ -306,7 +239,6 @@ def add_movie(cur):
             print("Genre cannot be empty.")
 
     release_year = None
-
     valid = False
 
     while not valid:
@@ -323,7 +255,6 @@ def add_movie(cur):
             print("Enter a valid release year.")
 
     duration = None
-
     valid = False
 
     while not valid:
@@ -341,10 +272,49 @@ def add_movie(cur):
         else:
             print("Enter a valid duration.")
 
-    studio_id = choose_studio(cur)
+    print("\n=== Available Studios ===")
 
-    if studio_id is None:
-        return
+    cur.execute(
+        """
+        SELECT studio_id, studio_name
+        FROM group5.studio
+        ORDER BY studio_id
+        """
+    )
+
+    rows = cur.fetchall()
+
+    for row in rows:
+
+        print(
+            "ID:", row[0],
+            "| Studio:", row[1]
+        )
+
+    studio_id = None
+
+    while studio_id is None:
+
+        selected_id = get_positive_int(
+            "\nChoose Studio ID: "
+        )
+
+        if selected_id is None:
+            return
+
+        cur.execute(
+            """
+            SELECT studio_id
+            FROM group5.studio
+            WHERE studio_id = %s
+            """,
+            (selected_id,)
+        )
+
+        if cur.fetchone() is not None:
+            studio_id = selected_id
+        else:
+            print("That studio ID does not exist.")
 
     cur.execute(
         """
