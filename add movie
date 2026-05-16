@@ -1,0 +1,17 @@
+INSERT INTO group5.movies
+(title, genre, release_year, duration, studio_id)
+
+VALUES
+('Michael', 'Biography', 2025, 150, 1);
+
+INSERT INTO group5.studio
+(studio_name)
+
+VALUES
+('Universal Pictures');
+
+INSERT INTO group5.studio
+(studio_name)
+
+VALUES
+('Warner Bros');
