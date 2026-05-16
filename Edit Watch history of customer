@@ -1,1 +1,208 @@
+# This program views movies and records customer watch history
 
+import getpass
+from datetime import date
+from psycopg2 import connect
+
+
+def connect_db():
+    dbuser = getpass.getuser()
+    dbpass = getpass.getpass("Password: ")
+
+    connStr = "host=csdept dbname=cs236 user=%s password=%s" % (
+        dbuser,
+        dbpass
+    )
+
+    return connect(connStr)
+
+
+def safe_input(prompt):
+    val = input(prompt).strip()
+
+    if val.lower() == "q":
+        return None
+
+    return val
+
+
+def get_positive_int(prompt):
+    valid = False
+    number = None
+
+    while not valid:
+        val = safe_input(prompt)
+
+        if val is None:
+            return None
+
+        try:
+            val = int(val)
+
+            if val > 0:
+                number = val
+                valid = True
+            else:
+                print("Enter a positive integer.")
+
+        except:
+            print("Enter a positive integer.")
+
+    return number
+
+
+def view_movies(cur):
+    print("\n=== Movie Catalog ===")
+
+    cur.execute(
+        """
+        SELECT movie_id, title, genre, release_year, duration, studio_id
+        FROM group5.movies
+        ORDER BY title
+        """
+    )
+
+    rows = cur.fetchall()
+
+    if len(rows) == 0:
+        print("No movies found.")
+    else:
+        print("%-5s %-25s %-15s %-10s %-10s %-10s" %
+              ("ID", "Title", "Genre", "Year", "Duration", "Studio ID"))
+        print("-" * 80)
+
+        for row in rows:
+            print("%-5s %-25s %-15s %-10s %-10s %-10s" %
+                  (row[0], row[1], row[2], row[3], row[4], row[5]))
+
+
+def record_watch_history(cur):
+    print("\n=== Record Watch History ===")
+    print("Type 'q' anytime to cancel.\n")
+
+    customer_id = get_positive_int("Customer ID: ")
+
+    if customer_id is None:
+        return
+
+    cur.execute(
+        """
+        SELECT customer_id
+        FROM group5.customers
+        WHERE customer_id = %s
+        """,
+        (customer_id,)
+    )
+
+    if cur.fetchone() is None:
+        print("Customer ID does not exist.")
+        return
+
+    view_movies(cur)
+
+    movie_id = get_positive_int("\nMovie ID Watched: ")
+
+    if movie_id is None:
+        return
+
+    cur.execute(
+        """
+        SELECT duration
+        FROM group5.movies
+        WHERE movie_id = %s
+        """,
+        (movie_id,)
+    )
+
+    movie = cur.fetchone()
+
+    if movie is None:
+        print("Movie ID does not exist.")
+        return
+
+    duration = movie[0]
+
+    minutes_watched = get_positive_int("Minutes Watched: ")
+
+    if minutes_watched is None:
+        return
+
+    if minutes_watched > duration:
+        minutes_watched = duration
+
+    progress = round((minutes_watched / duration) * 100, 2)
+
+    cur.execute(
+        """
+        INSERT INTO group5.watchhistory
+        (
+            customer_id,
+            movie_id,
+            watch_date,
+            progress,
+            total_watch_time
+        )
+
+        VALUES (%s, %s, %s, %s, %s)
+
+        RETURNING watch_id
+        """,
+        (
+            customer_id,
+            movie_id,
+            date.today(),
+            progress,
+            minutes_watched
+        )
+    )
+
+    watch_id = cur.fetchone()[0]
+
+    print("\nWatch history recorded successfully.")
+    print("Watch ID:", watch_id)
+    print("Progress:", progress, "%")
+    print("Minutes Watched:", minutes_watched)
+
+
+def menu():
+    print("\n=== Movie Catalog Menu ===")
+    print("1. View Movie Catalog")
+    print("2. Record Watched Movie")
+    print("3. Quit")
+
+
+def main():
+    conn = connect_db()
+    cur = conn.cursor()
+
+    running = True
+
+    while running:
+        menu()
+
+        choice = safe_input("\nEnter your choice: ")
+
+        if choice is None:
+            running = False
+
+        elif choice == "1":
+            view_movies(cur)
+
+        elif choice == "2":
+            record_watch_history(cur)
+            conn.commit()
+
+        elif choice == "3":
+            running = False
+
+        else:
+            print("Invalid choice.")
+
+    cur.close()
+    conn.close()
+
+    print("\nProgram ended.")
+
+
+if __name__ == "__main__":
+    main()
