@@ -1,80 +1,22 @@
-  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 224, in <module>
-    main()
-    ~~~~^^
-  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 213, in main
-    add_customer(cur)
-    ~~~~~~~~~~~~^^^^^
-  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 171, in add_customer
-    subscription_id = choose_subscription(cur)
-  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 69, in choose_subscription
-    cur.execute(
-    ~~~~~~~~~~~^
-        """
-        ^^^
-    ...<3 lines>...
-        """
-        ^^^
-    )
-    ^
-psycopg2.errors.UndefinedTable: relation "subscriptions" does not exist
-LINE 3:         FROM subscriptions
+ Schema |     Name      | Type  | Owner  
+--------+---------------+-------+--------
+ group5 | actors        | table | watson
+ group5 | customers     | table | watson
+ group5 | movie_actors  | table | watson
+ group5 | movies        | table | watson
+ group5 | studios       | table | watson
+ group5 | subscriptions | table | watson
+ group5 | watch_history | table | watson
 
-                            ^
 
-INSERT INTO customers
-(email, date_of_birth, first_name, last_name)
-VALUES
-('test@gmail.com', '2000-01-01', 'Test', 'User');
-
-=== Available Subscriptions ===
+Customer ID: 1
 Traceback (most recent call last):
-  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 224, in <module>
+  File "/home/acheampong/cs236/Final Project/movieStreamingupdate.py", line 208, in <module>
     main()
-    ~~~~^^
-  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 213, in main
-    add_customer(cur)
-    ~~~~~~~~~~~~^^^^^
-  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 171, in add_customer
-    subscription_id = choose_subscription(cur)
-  File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 69, in choose_subscription
+  File "/home/acheampong/cs236/Final Project/movieStreamingupdate.py", line 192, in <module>
+    record_watch_history(cur)
+  File "/home/acheampong/cs236/Final Project/movieStreamingupdate.py", line 88, in <module>
     cur.execute(
-    ~~~~~~~~~~~^
-        """
-        ^^^
-    ...<3 lines>...
-        """
-        ^^^
-    )
-    ^
-psycopg2.errors.UndefinedTable: relation "subscriptions" does not exist
-LINE 3:         FROM subscriptions
+psycopg2.errors.UndefinedTable: relation "group5.customers" does not exist
+LINE 3:         FROM group5.customers
                      ^
-def main():
-    conn = connect_db()
-    cur = conn.cursor()
-
-    cur.execute("SELECT current_database();")
-    print("Connected to database:", cur.fetchone()[0])
-
-    cur.execute("""
-        SELECT table_schema, table_name
-        FROM information_schema.tables
-        WHERE table_name LIKE '%subscription%';
-    """)
-
-    print("Subscription tables found:")
-    for row in cur.fetchall():
-        print(row)
-
-    add_customer(cur)
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-Subscription tables found:
-('pg_catalog', 'pg_subscription')
-('pg_catalog', 'pg_subscription_rel')
-('pg_catalog', 'pg_stat_subscription')
-
-
