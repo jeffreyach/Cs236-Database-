@@ -83,3 +83,44 @@ def add_actor(cur):
 
     print("\nActor added successfully.")
     print("Generated Actor ID:", actor_id)
+
+
+
+=== Movie Catalog Menu ===
+1. View Movie Catalog
+2. Record Watched Movie
+3. Quit
+
+Enter your choice: 2
+
+Record Watch History
+Type 'q' anytime to cancel.
+
+Customer ID: 1
+
+Movie Catalog
+ID    Title                     Genre           Year       Duration   Studio ID 
+--------------------------------------------------------------------------------
+3     Friday                    Comedy          1995       97         4         
+2     Grown Ups                 Comedy          2010       102        5         
+4     Interstellar              Science Fiction 2014       169        4         
+1     Michael                   Biopic          2026       150        1         
+
+Movie ID Watched: 1
+Minutes Watched: 65
+Traceback (most recent call last):
+  File "/home/acheampong/cs236/Final Project/movieStreamingupdate.py", line 208, in <module>
+    main()
+  File "/home/acheampong/cs236/Final Project/movieStreamingupdate.py", line 192, in <module>
+    record_watch_history(cur)
+  File "/home/acheampong/cs236/Final Project/movieStreamingupdate.py", line 135, in <module>
+    cur.execute(
+psycopg2.errors.UndefinedColumn: column "total_watch_time" of relation "watch_history" does not exist
+LINE 8:             total_watch_time
+                    ^
+
+watch_history;
+ watch_id | customer_id | movie_id | watch_date | progress 
+----------+-------------+----------+------------+----------
+(0 rows)
+
