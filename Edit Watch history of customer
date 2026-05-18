@@ -9,7 +9,7 @@ def connect_db():
     dbuser = getpass.getuser()
     dbpass = getpass.getpass("Password: ")
 
-    connStr = "host=csdept dbname=cs236 user=%s password=%s" % (
+    connStr = "host=csdept dbname=cs236proj user=%s password=%s" % (
         dbuser,
         dbpass
     )
@@ -31,6 +31,7 @@ def get_positive_int(prompt):
     number = None
 
     while not valid:
+        
         val = safe_input(prompt)
 
         if val is None:
@@ -51,10 +52,10 @@ def get_positive_int(prompt):
     return number
 
 
-def view_movies(cur):
-    print("\n=== Movie Catalog ===")
+def view_movies(dbcursor):
+    print("\nMovie Catalog")
 
-    cur.execute(
+    dbcursor.execute(
         """
         SELECT movie_id, title, genre, release_year, duration, studio_id
         FROM group5.movies
@@ -62,7 +63,7 @@ def view_movies(cur):
         """
     )
 
-    rows = cur.fetchall()
+    rows = dbcursor.fetchall()
 
     if len(rows) == 0:
         print("No movies found.")
@@ -76,8 +77,8 @@ def view_movies(cur):
                   (row[0], row[1], row[2], row[3], row[4], row[5]))
 
 
-def record_watch_history(cur):
-    print("\n=== Record Watch History ===")
+def record_watch_history(dbcursor):
+    print("\nRecord Watch History")
     print("Type 'q' anytime to cancel.\n")
 
     customer_id = get_positive_int("Customer ID: ")
@@ -85,7 +86,7 @@ def record_watch_history(cur):
     if customer_id is None:
         return
 
-    cur.execute(
+    dbcursor.execute(
         """
         SELECT customer_id
         FROM group5.customers
@@ -94,18 +95,18 @@ def record_watch_history(cur):
         (customer_id,)
     )
 
-    if cur.fetchone() is None:
+    if dbcursor.fetchone() is None:
         print("Customer ID does not exist.")
         return
 
-    view_movies(cur)
+    view_movies(dbcursor)
 
     movie_id = get_positive_int("\nMovie ID Watched: ")
 
     if movie_id is None:
         return
 
-    cur.execute(
+    dbcursor.execute(
         """
         SELECT duration
         FROM group5.movies
@@ -114,7 +115,7 @@ def record_watch_history(cur):
         (movie_id,)
     )
 
-    movie = cur.fetchone()
+    movie = dbcursor.fetchone()
 
     if movie is None:
         print("Movie ID does not exist.")
@@ -122,45 +123,68 @@ def record_watch_history(cur):
 
     duration = movie[0]
 
-    minutes_watched = get_positive_int("Minutes Watched: ")
+minutes_watched = None
+valid = False
 
-    if minutes_watched is None:
-        return
+while not valid:
 
-    if minutes_watched > duration:
-        minutes_watched = duration
+    minutes = get_non_negative_int("Minutes Watched: ")
 
-    progress = round((minutes_watched / duration) * 100, 2)
+    if minutes is None:
+        return   
 
-    cur.execute(
+    if minutes <= duration:
+        minutes_watched = minutes
+        valid = True
+    else:
+        print("Minutes watched cannot exceed the movie duration.")
+        print("Movie duration is", duration, "minutes.")
+
+    progress = minutes_watched
+
+    dbcursor.execute(
         """
-        INSERT INTO group5.watchhistory
+        UPDATE group5.watch_history
+        SET progress = %s,
+            watch_date = %s
+        WHERE customer_id = %s
+        AND movie_id = %s
+        """,
+        (
+            progress,
+            date.today(),
+            customer_id,
+            movie_id
+        )
+    )
+
+    print("\nWatch history updated successfully.")
+
+else:
+
+    dbcursor.execute(
+        """
+        INSERT INTO group5.watch_history
         (
             customer_id,
             movie_id,
             watch_date,
-            progress,
-            total_watch_time
+            progress
         )
 
-        VALUES (%s, %s, %s, %s, %s)
-
-        RETURNING watch_id
+        VALUES (%s, %s, %s, %s)
         """,
         (
             customer_id,
             movie_id,
             date.today(),
-            progress,
-            minutes_watched
+            progress
         )
     )
 
-    watch_id = cur.fetchone()[0]
 
     print("\nWatch history recorded successfully.")
     print("Watch ID:", watch_id)
-    print("Progress:", progress, "%")
     print("Minutes Watched:", minutes_watched)
 
 
@@ -173,7 +197,7 @@ def menu():
 
 def main():
     conn = connect_db()
-    cur = conn.cursor()
+    dbcursor = conn.dbcursor()
 
     running = True
 
@@ -186,10 +210,10 @@ def main():
             running = False
 
         elif choice == "1":
-            view_movies(cur)
+            view_movies(dbcursor)
 
         elif choice == "2":
-            record_watch_history(cur)
+            record_watch_history(dbcursor)
             conn.commit()
 
         elif choice == "3":
@@ -198,7 +222,7 @@ def main():
         else:
             print("Invalid choice.")
 
-    cur.close()
+    dbcursor.close()
     conn.close()
 
     print("\nProgram ended.")
@@ -206,3 +230,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+Syntax Error: 'return' outside function: <string>, line 134, pos 9
