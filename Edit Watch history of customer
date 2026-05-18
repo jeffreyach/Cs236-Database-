@@ -5,7 +5,9 @@ from datetime import date
 from psycopg2 import connect
 
 
+# Connect to database
 def connect_db():
+
     dbuser = getpass.getuser()
     dbpass = getpass.getpass("Password: ")
 
@@ -17,7 +19,9 @@ def connect_db():
     return connect(connStr)
 
 
+# Safe input function
 def safe_input(prompt):
+
     val = input(prompt).strip()
 
     if val.lower() == "q":
@@ -26,23 +30,27 @@ def safe_input(prompt):
     return val
 
 
+# Positive integer validation
 def get_positive_int(prompt):
+
     valid = False
     number = None
 
     while not valid:
-        
+
         val = safe_input(prompt)
 
         if val is None:
             return None
 
         try:
+
             val = int(val)
 
             if val > 0:
                 number = val
                 valid = True
+
             else:
                 print("Enter a positive integer.")
 
@@ -52,13 +60,22 @@ def get_positive_int(prompt):
     return number
 
 
+# View movie catalog
 def view_movies(dbcursor):
+
     print("\nMovie Catalog")
 
     dbcursor.execute(
         """
-        SELECT movie_id, title, genre, release_year, duration, studio_id
+        SELECT movie_id,
+               title,
+               genre,
+               release_year,
+               duration,
+               studio_id
+
         FROM group5.movies
+
         ORDER BY title
         """
     )
@@ -66,18 +83,43 @@ def view_movies(dbcursor):
     rows = dbcursor.fetchall()
 
     if len(rows) == 0:
+
         print("No movies found.")
+
     else:
-        print("%-5s %-25s %-15s %-10s %-10s %-10s" %
-              ("ID", "Title", "Genre", "Year", "Duration", "Studio ID"))
+
+        print(
+            "%-5s %-25s %-15s %-10s %-10s %-10s" %
+            (
+                "ID",
+                "Title",
+                "Genre",
+                "Year",
+                "Duration",
+                "Studio ID"
+            )
+        )
+
         print("-" * 80)
 
         for row in rows:
-            print("%-5s %-25s %-15s %-10s %-10s %-10s" %
-                  (row[0], row[1], row[2], row[3], row[4], row[5]))
+
+            print(
+                "%-5s %-25s %-15s %-10s %-10s %-10s" %
+                (
+                    row[0],
+                    row[1],
+                    row[2],
+                    row[3],
+                    row[4],
+                    row[5]
+                )
+            )
 
 
+# Record watch history
 def record_watch_history(dbcursor):
+
     print("\nRecord Watch History")
     print("Type 'q' anytime to cancel.\n")
 
@@ -96,6 +138,7 @@ def record_watch_history(dbcursor):
     )
 
     if dbcursor.fetchone() is None:
+
         print("Customer ID does not exist.")
         return
 
@@ -118,116 +161,173 @@ def record_watch_history(dbcursor):
     movie = dbcursor.fetchone()
 
     if movie is None:
+
         print("Movie ID does not exist.")
         return
 
     duration = movie[0]
 
-minutes_watched = None
-valid = False
+    minutes_watched = None
+    valid = False
 
-while not valid:
+    while not valid:
 
-    minutes = get_non_negative_int("Minutes Watched: ")
+        val = safe_input("Minutes Watched: ")
 
-    if minutes is None:
-        return   
+        if val is None:
+            return
 
-    if minutes <= duration:
-        minutes_watched = minutes
-        valid = True
-    else:
-        print("Minutes watched cannot exceed the movie duration.")
-        print("Movie duration is", duration, "minutes.")
+        try:
+
+            val = int(val)
+
+            if val < 0:
+
+                print("Minutes watched cannot be negative.")
+
+            elif val > duration:
+
+                print(
+                    "Minutes watched cannot exceed movie duration."
+                )
+
+                print(
+                    "Movie duration is",
+                    duration,
+                    "minutes."
+                )
+
+            else:
+
+                minutes_watched = val
+                valid = True
+
+        except:
+
+            print("Enter a whole number.")
 
     progress = minutes_watched
 
     dbcursor.execute(
         """
-        UPDATE group5.watch_history
-        SET progress = %s,
-            watch_date = %s
+        SELECT watch_id
+        FROM group5.watch_history
         WHERE customer_id = %s
         AND movie_id = %s
         """,
         (
-            progress,
-            date.today(),
             customer_id,
             movie_id
         )
     )
 
-    print("\nWatch history updated successfully.")
+    existing_watch = dbcursor.fetchone()
 
-else:
+    if existing_watch is not None:
 
-    dbcursor.execute(
-        """
-        INSERT INTO group5.watch_history
-        (
-            customer_id,
-            movie_id,
-            watch_date,
-            progress
+        dbcursor.execute(
+            """
+            UPDATE group5.watch_history
+            SET progress = %s,
+                watch_date = %s
+            WHERE customer_id = %s
+            AND movie_id = %s
+            """,
+            (
+                progress,
+                date.today(),
+                customer_id,
+                movie_id
+            )
         )
 
-        VALUES (%s, %s, %s, %s)
-        """,
-        (
-            customer_id,
-            movie_id,
-            date.today(),
-            progress
+        print("\nWatch history updated successfully.")
+
+    else:
+
+        dbcursor.execute(
+            """
+            INSERT INTO group5.watch_history
+            (
+                customer_id,
+                movie_id,
+                watch_date,
+                progress
+            )
+
+            VALUES (%s, %s, %s, %s)
+
+            RETURNING watch_id
+            """,
+            (
+                customer_id,
+                movie_id,
+                date.today(),
+                progress
+            )
         )
-    )
 
+        watch_id = dbcursor.fetchone()[0]
 
-    print("\nWatch history recorded successfully.")
-    print("Watch ID:", watch_id)
+        print("\nWatch history recorded successfully.")
+        print("Watch ID:", watch_id)
+
     print("Minutes Watched:", minutes_watched)
 
 
+# Menu
 def menu():
+
     print("\n=== Movie Catalog Menu ===")
     print("1. View Movie Catalog")
     print("2. Record Watched Movie")
     print("3. Quit")
 
 
+# Main function
 def main():
+
     conn = connect_db()
-    dbcursor = conn.dbcursor()
+
+    dbcursor = conn.cursor()
 
     running = True
 
     while running:
+
         menu()
 
         choice = safe_input("\nEnter your choice: ")
 
         if choice is None:
+
             running = False
 
         elif choice == "1":
+
             view_movies(dbcursor)
 
         elif choice == "2":
+
             record_watch_history(dbcursor)
+
             conn.commit()
 
         elif choice == "3":
+
             running = False
 
         else:
+
             print("Invalid choice.")
 
     dbcursor.close()
+
     conn.close()
 
     print("\nProgram ended.")
 
 
+# Program start
 if __name__ == "__main__":
     main()
-Syntax Error: 'return' outside function: <string>, line 134, pos 9
