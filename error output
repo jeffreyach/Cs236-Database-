@@ -118,9 +118,11 @@ Traceback (most recent call last):
 psycopg2.errors.UndefinedColumn: column "total_watch_time" of relation "watch_history" does not exist
 LINE 8:             total_watch_time
                     ^
-
+cs236proj=> select * from
 watch_history;
- watch_id | customer_id | movie_id | watch_date | progress 
-----------+-------------+----------+------------+----------
-(0 rows)
+ watch_id | customer_id | movie_id |     watch_date      | progress 
+----------+-------------+----------+---------------------+----------
+        1 |           1 |        1 | 2026-05-17 00:00:00 |   150.00
+        2 |           1 |        1 | 2026-05-17 00:00:00 |    25.00
+(2 rows)
 
