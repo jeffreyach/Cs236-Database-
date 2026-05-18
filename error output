@@ -126,3 +126,80 @@ watch_history;
         2 |           1 |        1 | 2026-05-17 00:00:00 |    25.00
 (2 rows)
 
+cur.execute(
+    """
+    SELECT watch_id
+    FROM group5.watch_history
+    WHERE customer_id = %s
+    AND movie_id = %s
+    """,
+    (
+        customer_id,
+        movie_id
+    )
+)
+
+existing_watch = cur.fetchone()
+
+if existing_watch is not None:
+
+    cur.execute(
+        """
+        UPDATE group5.watch_history
+        SET progress = %s,
+            watch_date = %s
+        WHERE customer_id = %s
+        AND movie_id = %s
+        """,
+        (
+            progress,
+            date.today(),
+            customer_id,
+            movie_id
+        )
+    )
+
+    print("\nWatch history updated successfully.")
+
+else:
+
+    cur.execute(
+        """
+        INSERT INTO group5.watch_history
+        (
+            customer_id,
+            movie_id,
+            watch_date,
+            progress
+        )
+
+        VALUES (%s, %s, %s, %s)
+        """,
+        (
+            customer_id,
+            movie_id,
+            date.today(),
+            progress
+        )
+    )
+
+    print("\nWatch history added successfully.")
+
+minutes_watched = None
+valid = False
+
+while not valid:
+
+    minutes = get_non_negative_int("Minutes Watched: ")
+
+    if minutes is None:
+        return
+
+    if minutes <= duration:
+        minutes_watched = minutes
+        valid = True
+    else:
+        print("Minutes watched cannot exceed the movie duration.")
+        print("Movie duration is", duration, "minutes.")
+
+progress = minutes_watched
