@@ -20,3 +20,6 @@ Traceback (most recent call last):
 psycopg2.errors.UndefinedTable: relation "group5.customers" does not exist
 LINE 3:         FROM group5.customers
                      ^
+
+psycopg2.errors.InsufficientPrivilege: permission denied for sequence movie_movie_id_seq
+
