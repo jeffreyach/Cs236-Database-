@@ -44,3 +44,42 @@ Traceback (most recent call last):
   File "/home/acheampong/cs236/Final Project/movieStreamingadd.py", line 319, in <module>
     cur.execute(
 psycopg2.errors.InsufficientPrivilege: permission denied for sequence movie_movie_id_seq
+
+
+def add_actor(cur):
+
+    print("\n=== Add Actor ===")
+    print("Type 'q' anytime to cancel.\n")
+
+    actor_name = ""
+
+    while actor_name == "":
+
+        actor_name = safe_input("Actor Name: ")
+
+        if actor_name is None:
+            return
+
+        if actor_name == "":
+            print("Actor name cannot be empty.")
+
+    cur.execute(
+        """
+        INSERT INTO group5.actors
+        (
+            name
+        )
+
+        VALUES (%s)
+
+        RETURNING actor_id
+        """,
+        (
+            actor_name,
+        )
+    )
+
+    actor_id = cur.fetchone()[0]
+
+    print("\nActor added successfully.")
+    print("Generated Actor ID:", actor_id)
